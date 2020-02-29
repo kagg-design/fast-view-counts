@@ -7,7 +7,7 @@ define( 'SHORTINIT', true );
 // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash
 $root = isset( $_SERVER['DOCUMENT_ROOT'] ) ? filter_var( $_SERVER['DOCUMENT_ROOT'], FILTER_SANITIZE_STRING ) : '';
 
-// Some servers return documnet root with trailing slash.
+// Some servers return document root with trailing slash.
 $root = rtrim( $root, '/\\' );
 require $root . '/wp-load.php';
 

@@ -110,32 +110,31 @@ class Main {
 	 *
 	 * @return false|string
 	 */
-	public static function get_count_html( $count ) {
+	private static function get_count_html( $count ) {
 		ob_start();
 		?>
 		<span><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
 		<span class="view-svg-count"></span>
 		<?php
+
 		return ob_get_clean();
 	}
 
 	/**
 	 * Show view count.
+	 *
+	 * @param int  $id     Post id.
+	 * @param null $update Update or just show the count.
 	 */
-	public static function show_count() {
-		$post_id = get_the_ID();
-
-		wp_cache_delete( $post_id, 'post_meta' );
-		$count = intval( get_post_meta( get_the_ID(), self::COUNT_META_KEY, true ) );
+	public static function show_count( $id = 0, $update = null ) {
+		$id     = $id ? $id : get_the_ID();
+		$update = ( null !== $update ) ? $update : is_single();
 		?>
 		<div
 				class="comments-view"
-				data-view-count-id="<?php echo get_the_ID(); ?>"
-				data-view-count-update="<?php echo (int) is_single(); ?>">
-			<?php
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo self::get_count_html( $count );
-			?>
+				data-view-count-id="<?php echo intval( $id ); ?>"
+				data-view-count-update="<?php echo (int) $update; ?>"
+		>
 		</div>
 		<?php
 	}
