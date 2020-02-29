@@ -15,6 +15,17 @@ use wpdb;
 class Main {
 	const COUNT_META_KEY = 'post_views_key_all';
 
+	const ICON = '
+<svg width="16px" height="10px" viewBox="0 0 16 10" version="1.1" xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink">
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g transform="translate(-43.000000, -5.000000)" fill="#999999" fill-rule="nonzero">
+            <path d="M51.0031165,15 C46.315933,15 43,11.1848635 43,10 C43,8.808933 46.2972341,5 51.0031165,5 C55.7401636,5 59,8.808933 59,10 C59,11.1848635 55.7463966,15 51.0031165,15 Z M51.0031165,13.2506203 C52.8169069,13.2506203 54.2754188,11.7679901 54.2754188,10 C54.2754188,8.18858561 52.8169069,6.75558313 51.0031165,6.75558313 C49.1768601,6.75558313 47.7183483,8.18238213 47.7245415,10 C47.7308142,11.7679901 49.1768601,13.2506203 51.0031165,13.2506203 Z M51.0031165,11.1848635 C50.3424231,11.1848635 49.8001558,10.6451613 49.8001558,10 C49.8001558,9.34863524 50.3424231,8.808933 51.0031165,8.808933 C51.6575769,8.808933 52.2060771,9.34863524 52.2060771,10 C52.2060771,10.6451613 51.6575769,11.1848635 51.0031165,11.1848635 Z"></path>
+        </g>
+    </g>
+</svg>
+	';
+
 	/**
 	 * Counts read from database.
 	 *
@@ -90,7 +101,7 @@ class Main {
 					)
 				);
 			}
-			$counts[] = $this->get_count_html( $count );
+			$counts[] = $this->get_count_inner_html( $count );
 		}
 		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -110,14 +121,12 @@ class Main {
 	 *
 	 * @return false|string
 	 */
-	private static function get_count_html( $count ) {
-		ob_start();
-		?>
-		<span><?php echo esc_html( number_format_i18n( $count ) ); ?></span>
-		<span class="view-svg-count"></span>
-		<?php
+	private static function get_count_inner_html( $count ) {
+		$html = '<span class="fvc-count">' . number_format_i18n( $count ) . '</span>';
 
-		return ob_get_clean();
+		$html .= '<span class="fvc-icon">' . self::ICON . '</span>';
+
+		return $html;
 	}
 
 	/**
@@ -131,7 +140,7 @@ class Main {
 		$update = ( null !== $update ) ? $update : is_single();
 		?>
 		<div
-				class="comments-view"
+				class="fvc-view"
 				data-view-count-id="<?php echo intval( $id ); ?>"
 				data-view-count-update="<?php echo (int) $update; ?>"
 		>
