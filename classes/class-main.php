@@ -13,7 +13,7 @@ use wpdb;
  * Class Fast_View_Counts
  */
 class Main {
-	const COUNT_META_KEY = 'post_views_key_all';
+	const COUNT_META_KEY = 'fast_view_count';
 
 	const ICON = '
 <svg width="16px" height="10px" viewBox="0 0 16 10" version="1.1" xmlns="http://www.w3.org/2000/svg"
@@ -84,7 +84,7 @@ class Main {
 			$wpdb->prepare(
 				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE post_id IN (" .
 				$prepare_in . ') AND meta_key = %s',
-				self::COUNT_META_KEY
+				$this->get_meta_key()
 			)
 		);
 
@@ -97,7 +97,7 @@ class Main {
 						"UPDATE {$wpdb->postmeta} SET meta_value=%d WHERE post_id=%d AND meta_key=%s",
 						$count,
 						$view['id'],
-						self::COUNT_META_KEY
+						$this->get_meta_key()
 					)
 				);
 			}
@@ -192,5 +192,18 @@ class Main {
 		}
 
 		return 0;
+	}
+
+	/**
+	 * Get meta key.
+	 *
+	 * @return string
+	 */
+	private function get_meta_key() {
+		return (
+		constant( 'FAST_VIEW_COUNTS_META_KEY' ) ?
+			(string) constant( 'FAST_VIEW_COUNTS_META_KEY' ) :
+			self::COUNT_META_KEY
+		);
 	}
 }
