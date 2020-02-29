@@ -60,7 +60,7 @@ class Main {
 	public function update_view_counts() {
 		global $wpdb;
 
-//		check_ajax_referer( 'update_view_counts_nonce', 'nonce' );
+		check_ajax_referer( 'update_view_counts_nonce', 'nonce' );
 
 		$views = filter_input( INPUT_POST, 'views', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY );
 		$ids   = array_unique( array_column( $views, 'id' ) );
@@ -159,8 +159,9 @@ class Main {
 		if ( $how_many > 0 ) {
 			$placeholders    = array_fill( 0, $how_many, $format );
 			$prepared_format = implode( ',', $placeholders );
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared
 			$prepared_in = $wpdb->prepare( $prepared_format, $items );
+			// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 		} else {
 			$prepared_in = '';
 		}
