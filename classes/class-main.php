@@ -39,8 +39,8 @@ class Main {
 	public function init() {
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
 
-		add_action( 'wp_ajax_update_view_counts', [ $this, 'update_view_counts' ] );
-		add_action( 'wp_ajax_nopriv_update_view_counts', [ $this, 'update_view_counts' ] );
+		add_action( 'wp_ajax_update_view_counts', [ $this, 'update_views' ] );
+		add_action( 'wp_ajax_nopriv_update_view_counts', [ $this, 'update_views' ] );
 	}
 
 	/**
@@ -66,12 +66,26 @@ class Main {
 	}
 
 	/**
-	 * Get/update view counts.
+	 * Get/update views.
 	 */
-	public function update_view_counts() {
-		global $wpdb;
-
+	public function update_views() {
 		check_ajax_referer( 'update_view_counts_nonce', 'nonce' );
+
+		wp_send_json_success(
+			[
+				'counts' => $this->get_view_counts(),
+				'dates'  => $this->get_view_dates(),
+			]
+		);
+	}
+
+	/**
+	 * Get/update view counts.
+	 *
+	 * @return array
+	 */
+	private function get_view_counts() {
+		global $wpdb;
 
 		$views = filter_input( INPUT_POST, 'views', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY );
 		$ids   = array_unique( array_column( $views, 'id' ) );
@@ -119,11 +133,54 @@ class Main {
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.NoCaching
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
 
-		$all_counts = [
-			'counts' => $counts,
-		];
+		return $counts;
+	}
 
-		wp_send_json_success( $all_counts );
+	/**
+	 * Get view dates.
+	 *
+	 * @return array
+	 */
+	private function get_view_dates() {
+		$dates = [];
+
+		$views = filter_input( INPUT_POST, 'dates', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY );
+//		$ids   = array_unique( array_column( $dates, 'id' ) );
+
+		foreach ( $views as $view ) {
+			$id      = $view['id'];
+			$dates[] = $this->get_relative_date( $id );
+		}
+
+		return $dates;
+	}
+
+	/**
+	 * Get relative date.
+	 *
+	 * @param int $post_id Post id.
+	 *
+	 * @return false|int|string
+	 */
+	private function get_relative_date( $post_id ) {
+		$n_date = '';
+		if ( get_the_date( 'Y', $post_id ) === date( 'Y' ) ) {
+			$unix_time = current_time( 'timestamp' ) - get_post_time( 'U', false, $post_id );
+			if ( $unix_time < 3600 * 12 ) {
+				$n_date = human_time_diff( strtotime( get_the_date( 'd.m.Y, H:i', $post_id ) ), current_time( 'timestamp' ) ) . ' назад';
+			} elseif ( ( $unix_time < 3600 * 24 ) && ( get_the_date( 'd', $post_id ) === date( 'd' ) ) ) {
+				$n_date = __( 'Сегодня', 'shesht' ) . ', ' . get_post_time( 'H:i', false, $post_id, true );
+			} elseif ( 1 === ( current_time( 'd' ) - get_the_date( 'd', $post_id ) ) ) {
+				$n_date = __( 'Вчера', 'shesht' ) . ', ' . get_post_time( 'H:i', false, $post_id, true );
+			} elseif ( 2 === ( current_time( 'd' ) - get_the_date( 'd', $post_id ) ) ) {
+				$n_date = __( 'Позавчера', 'shesht' ) . ', ' . get_post_time( 'H:i', false, $post_id, true );
+			}
+			if ( '' === $n_date ) {
+				$n_date = get_post_time( 'j F', false, $post_id, true );
+			}
+		}
+
+		return ( '' !== $n_date ) ? $n_date : get_post_time( 'd.m.Y', false, $post_id, true );
 	}
 
 	/**
