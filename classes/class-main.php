@@ -106,8 +106,8 @@ class Main {
 			$id    = $view['id'];
 			$count = $this->get_count( $id );
 			if ( (bool) $view['update'] ) {
-				$count ++;
-				if ( 1 === $count ) {
+				if ( 0 === $count ) {
+					$count += wp_rand( 1, 4 );
 					$wpdb->query(
 						$wpdb->prepare(
 							"INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value) VALUES (%d, %s, %d)",
@@ -117,6 +117,7 @@ class Main {
 						)
 					);
 				} else {
+					$count += wp_rand( 1, 4 );
 					$wpdb->query(
 						$wpdb->prepare(
 							"UPDATE {$wpdb->postmeta} SET meta_value=%d WHERE post_id=%d AND meta_key=%s",
@@ -145,7 +146,6 @@ class Main {
 		$dates = [];
 
 		$views = filter_input( INPUT_POST, 'dates', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY );
-//		$ids   = array_unique( array_column( $dates, 'id' ) );
 
 		foreach ( $views as $view ) {
 			$id      = $view['id'];
