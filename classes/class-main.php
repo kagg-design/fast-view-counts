@@ -89,17 +89,29 @@ class Main {
 		);
 
 		foreach ( $views as $view ) {
-			$count = $this->get_count( $view['id'] );
+			$id    = $view['id'];
+			$count = $this->get_count( $id );
 			if ( (bool) $view['update'] ) {
 				$count ++;
-				$wpdb->query(
-					$wpdb->prepare(
-						"UPDATE {$wpdb->postmeta} SET meta_value=%d WHERE post_id=%d AND meta_key=%s",
-						$count,
-						$view['id'],
-						$this->get_meta_key()
-					)
-				);
+				if ( 1 === $count ) {
+					$wpdb->query(
+						$wpdb->prepare(
+							"INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value) VALUES (%d, %s, %d)",
+							$id,
+							$this->get_meta_key(),
+							$count
+						)
+					);
+				} else {
+					$wpdb->query(
+						$wpdb->prepare(
+							"UPDATE {$wpdb->postmeta} SET meta_value=%d WHERE post_id=%d AND meta_key=%s",
+							$count,
+							$id,
+							$this->get_meta_key()
+						)
+					);
+				}
 			}
 			$counts[] = $this->get_count_inner_html( $count );
 		}
