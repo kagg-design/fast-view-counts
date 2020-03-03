@@ -6,7 +6,7 @@
  * Author URI: http://kagg.eu/en/
  * Version: 0.1
  * Plugin Slug: fast-view-counts
- * Requires at least: 4.4
+ * Requires at least: 5.3
  * Tested up to: 5.3
  * Requires PHP: 5.6
  *

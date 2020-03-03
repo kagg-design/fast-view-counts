@@ -8,7 +8,7 @@ jQuery( document ).ready(
 	function( $ ) {
 		var countId     = 'data-view-count-id';
 		var countUpdate = 'data-view-count-update';
-		var dateId      = 'data-view-date-id';
+		var dateTimeStamp      = 'data-view-date-timestamp';
 
 		var countElements = $( '[' + countId + ']' );
 		var views         = [];
@@ -21,12 +21,12 @@ jQuery( document ).ready(
 			}
 		);
 
-		var dateElements = $( '[' + dateId + ']' );
+		var dateElements = $( '[' + dateTimeStamp + ']' );
 		var dates        = [];
 		$( dateElements ).each(
 			function( i, dateView ) {
 				dates[i] = {
-					id: $( dateView ).attr( dateId ),
+					timestamp: $( dateView ).attr( dateTimeStamp ),
 				};
 			}
 		);

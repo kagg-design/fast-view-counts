@@ -148,8 +148,8 @@ class Main {
 		$views = filter_input( INPUT_POST, 'dates', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY );
 
 		foreach ( $views as $view ) {
-			$id      = $view['id'];
-			$dates[] = $this->get_relative_date( $id );
+			$timestamp = $view['timestamp'];
+			$dates[]   = $this->get_relative_date( $timestamp );
 		}
 
 		return $dates;
@@ -158,29 +158,36 @@ class Main {
 	/**
 	 * Get relative date.
 	 *
-	 * @param int $post_id Post id.
+	 * @param int $post_timestamp Post time stamp.
 	 *
 	 * @return false|int|string
 	 */
-	private function get_relative_date( $post_id ) {
+	private function get_relative_date( $post_timestamp ) {
+		$post_day      = wp_date( 'd', $post_timestamp );
+		$post_hour_min = wp_date( 'H:i', $post_timestamp );
+
+		$current_day = current_time( 'd', true );
+
+		$utc = new \DateTimeZone( 'UTC' );
+
 		$n_date = '';
-		if ( get_the_date( 'Y', $post_id ) === date( 'Y' ) ) {
-			$unix_time = current_time( 'timestamp' ) - get_post_time( 'U', false, $post_id );
-			if ( $unix_time < 3600 * 12 ) {
-				$n_date = human_time_diff( strtotime( get_the_date( 'd.m.Y, H:i', $post_id ) ), current_time( 'timestamp' ) ) . ' назад';
-			} elseif ( ( $unix_time < 3600 * 24 ) && ( get_the_date( 'd', $post_id ) === date( 'd' ) ) ) {
-				$n_date = __( 'Сегодня', 'shesht' ) . ', ' . get_post_time( 'H:i', false, $post_id, true );
-			} elseif ( 1 === ( current_time( 'd' ) - get_the_date( 'd', $post_id ) ) ) {
-				$n_date = __( 'Вчера', 'shesht' ) . ', ' . get_post_time( 'H:i', false, $post_id, true );
-			} elseif ( 2 === ( current_time( 'd' ) - get_the_date( 'd', $post_id ) ) ) {
-				$n_date = __( 'Позавчера', 'shesht' ) . ', ' . get_post_time( 'H:i', false, $post_id, true );
+		if ( wp_date( 'Y', $post_timestamp, $utc ) === gmdate( 'Y' ) ) {
+			$time_diff = time() - $post_timestamp;
+			if ( $time_diff < 3600 * 12 ) {
+				$n_date = human_time_diff( $post_timestamp, time() ) . ' назад';
+			} elseif ( ( $time_diff < 3600 * 24 ) && ( gmdate( 'd' ) === $post_day ) ) {
+				$n_date = __( 'Сегодня', 'fast-view-counts' ) . ', ' . $post_hour_min;
+			} elseif ( 1 === ( $current_day - $post_day ) ) {
+				$n_date = __( 'Вчера', 'fast-view-counts' ) . ', ' . $post_hour_min;
+			} elseif ( 2 === ( $current_day - $post_day ) ) {
+				$n_date = __( 'Позавчера', 'fast-view-counts' ) . ', ' . $post_hour_min;
 			}
 			if ( '' === $n_date ) {
-				$n_date = get_post_time( 'j F', false, $post_id, true );
+				$n_date = wp_date( 'j F', $post_timestamp );
 			}
 		}
 
-		return ( '' !== $n_date ) ? $n_date : get_post_time( 'd.m.Y', false, $post_id, true );
+		return ( '' !== $n_date ) ? $n_date : wp_date( 'd.m.Y', $post_timestamp );
 	}
 
 	/**
