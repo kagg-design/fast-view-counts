@@ -21,11 +21,6 @@ $GLOBALS['locale']    = get_locale();
 $GLOBALS['wp_locale'] = new WP_Locale();
 // phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
 
-// Components needed for get_the_date() to work.
-require $root . '/wp-includes/general-template.php';
-require $root . '/wp-includes/post.php';
-require $root . '/wp-includes/class-wp-post.php';
-
 // Components needed for check_ajax_referer() to work.
 require $root . '/wp-includes/capabilities.php';
 require $root . '/wp-includes/class-wp-roles.php';
