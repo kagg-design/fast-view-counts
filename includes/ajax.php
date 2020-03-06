@@ -1,4 +1,9 @@
 <?php
+/**
+ * Ajax action file.
+ *
+ * @package KAGG\Fast_View_Counts
+ */
 
 use KAGG\Fast_View_Counts\Main;
 
@@ -11,6 +16,7 @@ $root = isset( $_SERVER['DOCUMENT_ROOT'] ) ? filter_var( $_SERVER['DOCUMENT_ROOT
 $root = rtrim( $root, '/\\' );
 require $root . '/wp-load.php';
 
+// Components loading order must follow same in wp-settings.php.
 // Components needed for number_format_i18n() to work properly.
 require $root . '/wp-includes/l10n.php';
 require $root . '/wp-includes/class-wp-locale.php';
@@ -29,6 +35,13 @@ require $root . '/wp-includes/class-wp-user.php';
 require $root . '/wp-includes/user.php';
 require $root . '/wp-includes/class-wp-session-tokens.php';
 require $root . '/wp-includes/class-wp-user-meta-session-tokens.php';
+
+// Components needed for update_post_meta() to work.
+require $root . '/wp-includes/post.php';
+require $root . '/wp-includes/class-wp-post.php';
+require $root . '/wp-includes/revision.php';
+
+// Components needed for check_ajax_referer() to work.
 require $root . '/wp-includes/kses.php';
 require $root . '/wp-includes/rest-api.php';
 
@@ -39,6 +52,7 @@ require $root . '/wp-includes/pluggable.php';
 
 // Load main plugin class.
 require_once '../classes/class-main.php';
+require_once '../classes/class-counter.php';
 
 if ( ! isset( $fast_view_counts ) ) {
 	$fast_view_counts = new Main();

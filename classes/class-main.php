@@ -2,7 +2,7 @@
 /**
  * Fast_View_Counts main class file.
  *
- * @package kagg\fast-view-counts
+ * @package KAGG\Fast_View_Counts
  */
 
 namespace KAGG\Fast_View_Counts;
@@ -10,12 +10,12 @@ namespace KAGG\Fast_View_Counts;
 use wpdb;
 
 /**
- * Class Fast_View_Counts
+ * Class Main
  */
 class Main {
 	const COUNT_META_KEY = 'fast_view_count';
 
-	const ICON = '
+	const ICON                               = '
 <svg width="16px" height="10px" viewBox="0 0 16 10" version="1.1" xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink">
     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
@@ -25,13 +25,14 @@ class Main {
     </g>
 </svg>
 	';
+	const FAST_VIEW_COUNTS_META_KEY_CONSTANT = 'FAST_VIEW_COUNTS_META_KEY';
 
 	/**
-	 * Counts read from database.
+	 * Metas read from database.
 	 *
 	 * @var array
 	 */
-	private $counts;
+	private $metas;
 
 	/**
 	 * Init class.
@@ -93,48 +94,93 @@ class Main {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
 		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared
-		$prepare_in   = $this->prepare_in( $ids, '%d' );
-		$this->counts = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE post_id IN (" .
-				$prepare_in . ') AND meta_key = %s',
-				$this->get_meta_key()
-			)
+		$prepared_ids       = $this->prepare_in( $ids, '%d' );
+		$prepared_meta_keys = $this->prepare_in( $this->get_meta_keys(), '%s' );
+
+		$this->metas = $wpdb->get_results(
+			"SELECT post_id, meta_key, meta_value FROM {$wpdb->postmeta} " .
+			'WHERE post_id IN (' . $prepared_ids . ') AND meta_key IN (' . $prepared_meta_keys . ')'
 		);
 
+		$counts = [];
 		foreach ( $views as $view ) {
-			$id    = $view['id'];
-			$count = $this->get_count( $id );
+			$id      = $view['id'];
+			$counter = $this->get_counter( $id );
 			if ( (bool) $view['update'] ) {
-				if ( 0 === $count ) {
-					$count += wp_rand( 1, 4 );
-					$wpdb->query(
-						$wpdb->prepare(
-							"INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value) VALUES (%d, %s, %d)",
-							$id,
-							$this->get_meta_key(),
-							$count
-						)
-					);
+				$counter = $this->maybe_fix_counter( $id, $counter );
+				if ( 0 === $counter->get_total() ) {
+					$counter->increment( wp_rand( 1, 4 ) );
+					$this->add_metas( $id, $counter );
 				} else {
-					$count += wp_rand( 1, 4 );
-					$wpdb->query(
-						$wpdb->prepare(
-							"UPDATE {$wpdb->postmeta} SET meta_value=%d WHERE post_id=%d AND meta_key=%s",
-							$count,
-							$id,
-							$this->get_meta_key()
-						)
-					);
+					$counter->increment( wp_rand( 1, 4 ) );
+					$this->update_metas( $id, $counter );
 				}
 			}
-			$counts[] = $this->get_count_inner_html( $count );
+			$counts[] = $this->get_counter_inner_html( $counter->get_total() );
 		}
 		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.NoCaching
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
 
 		return $counts;
+	}
+
+	/**
+	 * Add metas.
+	 *
+	 * @param int     $id      Post id.
+	 * @param Counter $counter Counter.
+	 */
+	private function add_metas( $id, $counter ) {
+		global $wpdb;
+
+		$periods = array_merge( [ '' ], Counter::get_periods() );
+
+		foreach ( $periods as $period ) {
+			$meta_key   = $this->get_meta_key( $period );
+			$meta_value = $counter->get( $period );
+
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared
+
+			// Delete all keys for a case when several metas with the same key exist.
+			$wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM {$wpdb->postmeta} WHERE post_id=%d AND meta_key=%s",
+					$id,
+					$meta_key
+				)
+			);
+			$wpdb->query(
+				$wpdb->prepare(
+					"INSERT INTO {$wpdb->postmeta} (post_id, meta_key, meta_value) VALUES (%d, %s, %s)",
+					$id,
+					$meta_key,
+					$meta_value
+				)
+			);
+			// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery
+
+		}
+
+		wp_cache_delete( $id, 'post_meta' );
+	}
+
+	/**
+	 * Update metas.
+	 *
+	 * @param int     $id      Post id.
+	 * @param Counter $counter Counter.
+	 */
+	private function update_metas( $id, $counter ) {
+		$periods = array_merge( [ '' ], Counter::get_periods() );
+
+		foreach ( $periods as $period ) {
+			update_post_meta( $id, $this->get_meta_key( $period ), $counter->get( $period ) );
+		}
 	}
 
 	/**
@@ -197,7 +243,7 @@ class Main {
 	 *
 	 * @return false|string
 	 */
-	private static function get_count_inner_html( $count ) {
+	private static function get_counter_inner_html( $count ) {
 		$html = '<span class="fvc-count">' . number_format_i18n( $count ) . '</span>';
 
 		$html .= '<span class="fvc-icon">' . self::ICON . '</span>';
@@ -254,32 +300,138 @@ class Main {
 	}
 
 	/**
-	 * Get count for post id.
+	 * Get counter for post id.
 	 *
 	 * @param int $id Post id.
 	 *
-	 * @return int
+	 * @return Counter
 	 */
-	private function get_count( $id ) {
-		foreach ( $this->counts as $count ) {
-			if ( $id === (int) $count->post_id ) {
-				return (int) $count->meta_value;
+	private function get_counter( $id ) {
+		$counter = $this->get_counter_from_meta_key( $id, $this->get_meta_key() );
+		if ( $counter ) {
+			return $counter;
+		}
+
+		// Fallback to old format with numbers.
+		$counter = new Counter();
+		$periods = Counter::get_periods();
+		foreach ( $periods as $period ) {
+			$period_counter = $period . '_counter';
+
+			$counter->{$period}         = $counter->get_start_of_period( $period );
+			$counter->{$period_counter} = $this->get_count_from_meta_key( $id, $this->get_meta_key( $period ) );
+		}
+
+		// Fallback to old format with json in total.
+		$total_counter_obj = json_decode( $counter->total_counter );
+		if ( is_object( $total_counter_obj ) ) {
+			$counter = new Counter( $counter->total_counter );
+
+			$counter->total         = 0;
+			$counter->total_counter = $total_counter_obj->total;
+		}
+
+		return $counter;
+	}
+
+	/**
+	 * Maybe fix old counter.
+	 *
+	 * @param int     $id      Post id.
+	 * @param Counter $counter Counter.
+	 *
+	 * @return Counter
+	 */
+	private function maybe_fix_counter( $id, $counter ) {
+		if ( $counter->month_counter ) {
+			return $counter;
+		}
+
+		// Fix counters for posts created in Mar, 2020.
+		$sec_from_launch = strtotime( get_post( $id )->post_date_gmt ) - strtotime( '01-03-2020' );
+		if ( $sec_from_launch > 0 ) {
+			// Post was created after 01-Mar-2020.
+			$sec_online = time() - strtotime( get_post( $id )->post_date_gmt );
+			$rate       = $counter->total_counter / $sec_online; // Average views per second.
+
+			$counter->hour_counter  = intval( min( $sec_online, 3600 ) * $rate * ( wp_rand( 25, 125 ) / 100 ) );
+			$counter->day_counter   = intval( min( $sec_online, 3600 * 24 ) * $rate * ( wp_rand( 25, 125 ) / 100 ) );
+			$counter->week_counter  = intval( min( $sec_online, 3600 * 24 * 7 ) * $rate * ( wp_rand( 25, 125 ) / 100 ) );
+			$counter->month_counter = intval( min( $sec_online, 3600 * 24 * 30 ) * $rate * ( wp_rand( 25, 125 ) / 100 ) );
+
+			$counter->hour_counter  = min( $counter->hour_counter, $counter->total_counter );
+			$counter->day_counter   = max( min( $counter->day_counter, $counter->total_counter ), $counter->hour_counter );
+			$counter->week_counter  = max( min( $counter->week_counter, $counter->total_counter ), $counter->day_counter );
+			$counter->month_counter = max( min( $counter->month_counter, $counter->total_counter ), $counter->week_counter );
+		}
+
+		return $counter;
+	}
+
+	/**
+	 * Get counter for post id from meta_key.
+	 *
+	 * @param int    $id       Post id.
+	 * @param string $meta_key Meta key.
+	 *
+	 * @return Counter|null
+	 */
+	private function get_counter_from_meta_key( $id, $meta_key = '' ) {
+		$count = $this->get_count_from_meta_key( $id, $meta_key );
+		if ( null === $count ) {
+			return null;
+		}
+
+		return new Counter( $count );
+	}
+
+	/**
+	 * Get count for post id from meta_key.
+	 *
+	 * @param int    $id       Post id.
+	 * @param string $meta_key Meta key.
+	 *
+	 * @return string|null
+	 */
+	private function get_count_from_meta_key( $id, $meta_key = '' ) {
+		foreach ( $this->metas as $meta ) {
+			if ( $id === (int) $meta->post_id && $meta_key === $meta->meta_key ) {
+				return $meta->meta_value;
 			}
 		}
 
-		return 0;
+		return null;
 	}
 
 	/**
 	 * Get meta key.
 	 *
+	 * @param string $period Period.
+	 *
 	 * @return string
 	 */
-	private function get_meta_key() {
+	private function get_meta_key( $period = '' ) {
+		$suffix = strtoupper( $period ? '_' . $period : '' );
+
 		return (
-		constant( 'FAST_VIEW_COUNTS_META_KEY' ) ?
-			(string) constant( 'FAST_VIEW_COUNTS_META_KEY' ) :
-			self::COUNT_META_KEY
+		defined( self::FAST_VIEW_COUNTS_META_KEY_CONSTANT . $suffix ) ?
+			(string) constant( self::FAST_VIEW_COUNTS_META_KEY_CONSTANT . $suffix ) :
+			self::COUNT_META_KEY . $suffix
 		);
+	}
+
+	/**
+	 * Get all meta keys.
+	 *
+	 * @return array
+	 */
+	private function get_meta_keys() {
+		$periods   = array_merge( [ '' ], Counter::get_periods() );
+		$meta_keys = [];
+		foreach ( $periods as $period ) {
+			$meta_keys[] = $this->get_meta_key( $period );
+		}
+
+		return $meta_keys;
 	}
 }
