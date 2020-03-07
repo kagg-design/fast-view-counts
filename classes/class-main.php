@@ -411,11 +411,12 @@ class Main {
 	 * @return string
 	 */
 	private function get_meta_key( $period = '' ) {
-		$suffix = strtoupper( $period ? '_' . $period : '' );
+		$suffix    = $period ? '_' . $period : '';
+		$suffix_up = strtoupper( $suffix );
 
 		return (
-		defined( self::FAST_VIEW_COUNTS_META_KEY_CONSTANT . $suffix ) ?
-			(string) constant( self::FAST_VIEW_COUNTS_META_KEY_CONSTANT . $suffix ) :
+		defined( self::FAST_VIEW_COUNTS_META_KEY_CONSTANT . $suffix_up ) ?
+			(string) constant( self::FAST_VIEW_COUNTS_META_KEY_CONSTANT . $suffix_up ) :
 			self::COUNT_META_KEY . $suffix
 		);
 	}
