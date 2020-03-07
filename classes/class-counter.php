@@ -104,11 +104,6 @@ class Counter {
 		// Compatibility with the old format with one number.
 		$this->total_counter = is_int( $data ) ? $data : $this->total_counter;
 
-		// Temporary fix for March, 2020.
-//		if ( $this->month_counter ) {
-//			$this->total_counter = max( $this->month_counter, $this->total_counter );
-//		}
-
 		$this->date = getdate();
 	}
 
