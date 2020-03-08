@@ -354,10 +354,10 @@ class Main {
 			$sec_online = time() - strtotime( get_post( $id )->post_date_gmt );
 			$rate       = $counter->total_counter / $sec_online; // Average views per second.
 
-			$counter->hour_counter  = intval( min( $sec_online, 3600 ) * $rate * ( wp_rand( 25, 125 ) / 100 ) );
-			$counter->day_counter   = intval( min( $sec_online, 3600 * 24 ) * $rate * ( wp_rand( 25, 125 ) / 100 ) );
-			$counter->week_counter  = intval( min( $sec_online, 3600 * 24 * 7 ) * $rate * ( wp_rand( 25, 125 ) / 100 ) );
-			$counter->month_counter = intval( min( $sec_online, 3600 * 24 * 30 ) * $rate * ( wp_rand( 25, 125 ) / 100 ) );
+			$counter->hour_counter  = intval( min( $sec_online, 3600 ) * $rate * ( wp_rand( 75, 125 ) / 100 ) );
+			$counter->day_counter   = intval( min( $sec_online, 3600 * 24 ) * $rate * ( wp_rand( 75, 125 ) / 100 ) );
+			$counter->week_counter  = intval( min( $sec_online, 3600 * 24 * 7 ) * $rate * ( wp_rand( 75, 125 ) / 100 ) );
+			$counter->month_counter = intval( min( $sec_online, 3600 * 24 * 30 ) * $rate * ( wp_rand( 75, 125 ) / 100 ) );
 
 			$counter->hour_counter  = min( $counter->hour_counter, $counter->total_counter );
 			$counter->day_counter   = max( min( $counter->day_counter, $counter->total_counter ), $counter->hour_counter );
