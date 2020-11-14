@@ -119,8 +119,7 @@ class Main {
 				} else {
 					$wpdb->query(
 						$wpdb->prepare(
-							"UPDATE {$wpdb->postmeta} SET meta_value=%d WHERE post_id=%d AND meta_key=%s",
-							$count,
+							"UPDATE {$wpdb->postmeta} SET meta_value=meta_value+1 WHERE post_id=%d AND meta_key=%s",
 							$id,
 							$this->get_meta_key()
 						)
