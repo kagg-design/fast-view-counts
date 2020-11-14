@@ -13,8 +13,15 @@ use wpdb;
  * Class Fast_View_Counts
  */
 class Main {
+
+	/**
+	 * Meta key.
+	 */
 	const COUNT_META_KEY = 'fast_view_count';
 
+	/**
+	 * Views icon.
+	 */
 	const ICON = '
 <svg width="16px" height="10px" viewBox="0 0 16 10" version="1.1" xmlns="http://www.w3.org/2000/svg"
      xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -144,7 +151,6 @@ class Main {
 		$dates = [];
 
 		$views = filter_input( INPUT_POST, 'dates', FILTER_VALIDATE_INT, FILTER_REQUIRE_ARRAY );
-//		$ids   = array_unique( array_column( $dates, 'id' ) );
 
 		foreach ( $views as $view ) {
 			$id      = $view['id'];
